@@ -1,7 +1,7 @@
 BINARY=scolex
 SOURCES=$(wildcard *.cc)
 OBJECT_FILES=$(SOURCES:.cc=.o)
-DEP_FILES=$(SOURCES:.cc=.d)
+DEP_FILES=$(OBJECT_FILES:.o=.d)
 
 CFLAGS+=-Wall -Wextra -Wno-c++98-compat -Wno-c++98-compat-pedantic
 CXXFLAGS+=-std=c++11 -stdlib=libc++
