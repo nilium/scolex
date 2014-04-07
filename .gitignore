@@ -1,0 +1,6 @@
+*.d
+*.o
+scolex
+.DS_Store
+*.temp
+*~
