@@ -21,7 +21,7 @@ namespace scolex
   File stream
 
 ==============================================================================*/
-struct fstream_t : public stream_t
+struct fstream_t
 {
   fstream_t() = delete;
 
