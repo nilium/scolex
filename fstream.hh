@@ -35,14 +35,14 @@ struct fstream_t
   // Closes this stream's current stream and replaces it with another stream.
   fstream_t &operator = (fstream_t &&stream);
 
-  virtual ~fstream_t();
+  ~fstream_t();
 
-  virtual int read(int num_bytes, void *buffer);
-  virtual int write(int num_bytes, const void *buffer);
+  int read(int num_bytes, void *buffer);
+  int write(int num_bytes, const void *buffer);
 
-  virtual bool eof() const;
-  virtual int tell() const;
-  virtual int seek(int pos, stream_seek_origin_t origin);
+  bool eof() const;
+  int tell() const;
+  int seek(int pos, stream_seek_origin_t origin);
 
 private:
   std::FILE *file;
