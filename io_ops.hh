@@ -117,13 +117,11 @@ class stream_has_eof_t__
 {
   // Based on Stack Overflow answer by Johannes Schaub:
   // http://stackoverflow.com/a/264088/457812
-  using yes_t = struct{};
-  using no_t = void*;
   template <typename U, U> struct type_check;
-  template <typename _1> static yes_t &check(type_check<bool(STREAM::*)()const, &_1::eof> *);
-  template <typename> static no_t &check(...);
+  template <typename _1> static std::true_type check(type_check<bool(STREAM::*)()const, &_1::eof> *);
+  template <typename> static std::false_type check(...);
 public:
-  enum : bool { value = std::is_same<decltype(check<STREAM>(0)), yes_t&>::value };
+  enum : bool { value = decltype(check<STREAM>(0))::value };
 };
 
 
