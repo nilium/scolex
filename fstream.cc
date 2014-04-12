@@ -29,7 +29,7 @@ fstream_t::fstream_t(const string_t &path, stream_mode_t mode_)
     break;
   }
 
-  file = std::fopen(path.c_str(), fopen_mode);
+  file = std::fopen(path.data(), fopen_mode);
 
   if (!file) {
     throw std::runtime_error("Could not open file.");
