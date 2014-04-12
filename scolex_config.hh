@@ -6,8 +6,9 @@
 #ifndef __SCOLEX_CONFIG_HH__
 #define __SCOLEX_CONFIG_HH__
 
-#include <type_traits>
+#include <cstdint>
 #include <string>
+#include <type_traits>
 
 
 #if !defined(__has_builtin)
