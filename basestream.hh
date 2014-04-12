@@ -7,250 +7,106 @@
 #define __SCOLEX_BASESTREAM_HH__
 
 #include "scolex_config.hh"
-
-
-#ifndef Q_NETWORK_IS_BIG_ENDIAN
-#define Q_NETWORK_IS_BIG_ENDIAN 0
-#endif
-
-#ifndef Q_HOST_IS_BIG_ENDIAN
-#define Q_HOST_IS_BIG_ENDIAN 0
-#endif
+#include "stream_enums.hh"
 
 
 namespace scolex
 {
 
 
-enum stream_mode_t
+/*
+  Stream classes should implement some of the following public methods, though
+  all are optional depending on the purpose of the stream class.
+
+  int read(int num_bytes, void *output_buffer)
+  int write(int num_bytes, void const *input_buffer)
+    Reads from or writes to the stream, depending on the stream's mode. The
+    result is the number of bytes read or written if successful, otherwise a
+    number < 0. Reads/writes of num_bytes 0 should be no-ops, and this policy
+    is followed by io::read/write functions (meaning no function will be called
+    if num_bytes is 0). If num_bytes is < 0, this is considered invalid and
+    either a number < 0 should be returned or something suitably handle-able
+    should happen to indicate an error.
+
+  int tell() const
+    Returns the current absolute position of read/write operations in the
+    stream. If this fails for some reason, the result should be a number < 0.
+
+  int seek(int offset, stream_seek_origin_t origin)
+    Sets the offset of the stream relative to the given origin. Should return
+    a number < 0 on failure. If successful, must return the absolute position
+    of the stream after the seek (i.e., must return what tell() would return).
+
+  bool eof() const
+    Queries whether the stream is at its eof (whatever that may be). Is not
+    required to return true at any point for write streams. There is no error
+    state for this function. If unimplemented, io::eof will always return false.
+
+*/
+
+
+struct nulstream_t final
 {
-  STREAM_READ = 0x1 << 1,
-  STREAM_WRITE = 0x1 << 2,
-
-  STREAM_READWRITE = STREAM_READ | STREAM_WRITE,
+  int read(int num_bytes, void *buffer) { (void)num_bytes; (void)buffer; return 0; }
+  int write(int num_bytes, void const *buffer) { (void)num_bytes; (void)buffer; return num_bytes; }
+  bool eof() { return false; }
+  int tell() const { return 0; }
+  int seek(int offset, stream_seek_origin_t origin) { (void)offset; (void)origin; return 0; }
 };
-
-
-enum stream_seek_origin_t
-{
-  STREAM_SEEK_SET,
-  STREAM_SEEK_CUR,
-  STREAM_SEEK_END,
-};
-
-
-enum stream_endianness_t
-{
-  STREAM_ENDIAN_LITTLE = 1,
-  STREAM_ENDIAN_BIG = 2,
-
-#if Q_HOST_IS_BIG_ENDIAN
-  STREAM_ENDIAN_HOST = STREAM_ENDIAN_BIG,
-#else
-  STREAM_ENDIAN_HOST = STREAM_ENDIAN_LITTLE,
-#endif
-
-#if Q_NETWORK_IS_BIG_ENDIAN
-  STREAM_ENDIAN_NETWORK = STREAM_ENDIAN_BIG,
-#else
-  STREAM_ENDIAN_NETWORK = STREAM_ENDIAN_LITTLE,
-#endif
-};
-
-
-struct stream_t
-{
-  virtual ~stream_t() = 0;
-
-  /*
-    Read / write blocks of bytes from a stream. Returns <0 on failure,
-    otherwise returns the number of bytes written / read. Endianness does not
-    affect these functions.
-  */
-  virtual int read(int num_bytes, void *buffer);
-  virtual int write(int num_bytes, void const *buffer);
-
-  // Returns true if at EOF, otherwise false (may be an error, may be impossible
-  // to reach EOF, may just not be at EOF, etc.).
-  virtual bool eof() const;
-  // Returns -1 on failure, otherwise the absolute position in the stream.
-  virtual int tell() const;
-  // Returns -1 on failure, otherwise the absolute position in the stream after
-  // the seek has been applied.
-  virtual int seek(int pos, stream_seek_origin_t origin);
-};
-
 
 
 /*==============================================================================
 
-  Endianness-friendly read/write utility functions.
+  stream_wrapper_t
+
+  Defines a wrapper for any class implementing the basic stream interface.
 
 ==============================================================================*/
-
-/*
-  When specializing q_write and q_read for non-trivial types, the endianness
-  must be forwarded on to inner calls to q_read/write.
-
-  In addition, both forms of q_read should be implemented.
-*/
-
 template <class T>
-int q_write(stream_t &stream, T const &t_inst, stream_endianness_t endianness = STREAM_ENDIAN_NETWORK);
-
-template <class T>
-int q_read(stream_t &stream, T &t_inst, stream_endianness_t endianness = STREAM_ENDIAN_NETWORK);
-
-template <class T>
-T q_read(stream_t &stream, stream_endianness_t endianness = STREAM_ENDIAN_NETWORK);
-
-
-// big/little/host/network-endian specific functions
-template <class T>
-int q_write_le(stream_t &stream, T const &t_inst)
+class stream_wrapper_t final
 {
-  return q_write<T>(stream, t_inst, STREAM_ENDIAN_LITTLE);
-}
+  T &underlying;
 
+public:
+  stream_wrapper_t(T &ref) : underlying(ref) {}
 
-template <class T>
-int q_write_be(stream_t &stream, T const &t_inst)
-{
-  return q_write<T>(stream, t_inst, STREAM_ENDIAN_BIG);
-}
+  stream_wrapper_t(stream_wrapper_t const &other) = default;
+  stream_wrapper_t(stream_wrapper_t &&other) = delete;
 
+  stream_wrapper_t &operator == (stream_wrapper_t const &other) = default;
+  stream_wrapper_t &operator == (stream_wrapper_t &&other) = delete;
 
-template <class T>
-int q_write_ne(stream_t &stream, T const &t_inst)
-{
-  return q_write<T>(stream, t_inst, STREAM_ENDIAN_NETWORK);
-}
-
-
-template <class T>
-int q_write_he(stream_t &stream, T const &t_inst)
-{
-  return q_write<T>(stream, t_inst, STREAM_ENDIAN_HOST);
-}
-
-
-template <class T>
-int q_read_le(stream_t &stream, T &t_inst)
-{
-  return q_read<T>(stream, t_inst, STREAM_ENDIAN_LITTLE);
-}
-
-
-template <class T>
-int q_read_be(stream_t &stream, T &t_inst)
-{
-  return q_read<T>(stream, t_inst, STREAM_ENDIAN_BIG);
-}
-
-
-template <class T>
-int q_read_ne(stream_t &stream, T &t_inst)
-{
-  return q_read<T>(stream, t_inst, STREAM_ENDIAN_NETWORK);
-}
-
-
-template <class T>
-int q_read_he(stream_t &stream, T &t_inst)
-{
-  return q_read<T>(stream, t_inst, STREAM_ENDIAN_HOST);
-}
-
-
-template <class T>
-T read_le(stream_t &stream)
-{
-  return q_read<T>(stream, STREAM_ENDIAN_LITTLE);
-}
-
-
-template <class T>
-T read_be(stream_t &stream)
-{
-  return q_read<T>(stream, STREAM_ENDIAN_BIG);
-}
-
-
-template <class T>
-T read_ne(stream_t &stream)
-{
-  return q_read<T>(stream, STREAM_ENDIAN_NETWORK);
-}
-
-
-template <class T>
-T read_he(stream_t &stream)
-{
-  return q_read<T>(stream, STREAM_ENDIAN_HOST);
-}
-
-
-// Write strings
-int q_write_nulstring(stream_t &stream, const char *str, int length = -1, int cstrlen = -1);
-int q_write_nulstring(stream_t &stream, std::string const &str, int length = -1);
-
-std::string q_read_nulstring(stream_t &stream, int length = -1);
-
-
-template <class T>
-int q_write(stream_t &stream, T const &t_inst, stream_endianness_t endianness)
-{
-  static_assert(std::is_trivial<T>::value,
-    "q_write default implementation only accepts trivially copyable types.");
-
-  if (sizeof(T) <= 1 || STREAM_ENDIAN_HOST == endianness) {
-    return stream.write(int(sizeof(T)), &t_inst);
-  } else {
-    uint8_t const *ptr = (uint8_t *)&t_inst;
-    for (int index = sizeof(T) - 1; index >= 0; index -= 1) {
-      if (stream.write(1, &ptr[index]) != 1) {
-        return int(sizeof(T)) - (index + 1);
-      }
-    }
-    return int(sizeof(T));
+  int read(int num_bytes, void *buffer)
+  {
+    return underlying.read(num_bytes, buffer);
   }
-}
 
-
-template <class T>
-int q_read(stream_t &stream, T &t_inst, stream_endianness_t endianness)
-{
-  static_assert(std::is_trivial<T>::value,
-    "q_read default implementation only accepts trivially copyable types.");
-
-  if (sizeof(T) <= 1 || STREAM_ENDIAN_HOST == endianness) {
-    return stream.read(int(sizeof(T)), &t_inst);
-  } else {
-    uint8_t *ptr = (uint8_t *)&t_inst;
-    for (int index = sizeof(T) - 1; index >= 0; index -= 1) {
-      if (stream.read(1, &ptr[index]) != 1) {
-        return int(sizeof(T)) - (index + 1);
-      }
-    }
-    return int(sizeof(T));
+  int write(int num_bytes, void const *buffer)
+  {
+    return underlying.write(num_bytes, buffer);
   }
-}
 
-
-template <class T>
-T q_read(stream_t &stream, stream_endianness_t endianness)
-{
-  static_assert(std::is_trivial<T>::value,
-    "q_read default implementation only accepts trivially copyable types.");
-
-  T result {};
-  if (q_read(stream, result, endianness) != sizeof result) {
-    throw std::runtime_error("Failed to read object from stream.");
+  bool eof() const
+  {
+    return underlying.eof();
   }
-  return result;
-}
+
+  int tell() const
+  {
+    return underlying.tell();
+  }
+
+  int seek(int pos, stream_seek_origin_t origin)
+  {
+    return underlying.seek(pos, origin);
+  }
+};
 
 
 } // namespace scolex
+
+
+#include "io_ops.hh"
+
 
 #endif /* end __SCOLEX_BASESTREAM_HH__ include guard */

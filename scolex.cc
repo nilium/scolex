@@ -73,8 +73,8 @@ int main()
   std::cerr << "(expr7 != expr5)                   => " << (expr7 != expr5) << std::endl;
 
   #if 1
-  auto lteof = [] (stream_t &stream) {
-    std::cerr << "tell: " << stream.tell() << " eof: " << stream.eof() << std::endl;
+  auto lteof = [] (fstream_t &stream) {
+    std::cerr << "tell: " << io::tell(stream) << " eof: " << io::eof(stream) << std::endl;
   };
 
   {
@@ -82,11 +82,11 @@ int main()
 
     fstream_t stream("test_write.out~", STREAM_WRITE);
     lteof(stream);
-    std::cerr << q_write<bool>(stream, true) << std::endl;
+    std::cerr << io::write<bool>(stream, true) << std::endl;
     lteof(stream);
-    std::cerr << q_write<int32_t>(stream, 54321) << std::endl;
+    std::cerr << io::write<int32_t>(stream, 54321) << std::endl;
     lteof(stream);
-    std::cerr << q_write_nulstring(stream, std::string("foo-bar-baz-quux-a-string-longer-than-the-length-given"), 16) << std::endl;
+    std::cerr << io::write_nulstring(stream, std::string("foo-bar-baz-quux-a-string-longer-than-the-length-given"), 16) << std::endl;
     lteof(stream);
   }
 
@@ -95,13 +95,16 @@ int main()
 
     fstream_t stream("test_write.out~", STREAM_READ);
     lteof(stream);
-    std::cerr << q_read<bool>(stream) << std::endl;
+    std::cerr << io::read<bool>(stream) << std::endl;
     lteof(stream);
-    std::cerr << q_read<int32_t>(stream) << std::endl;
+    std::cerr << io::read<int32_t>(stream) << std::endl;
     lteof(stream);
-    std::cerr << q_read_nulstring(stream, 16) << std::endl;
+    std::cerr << io::read_nulstring(stream, 16) << std::endl;
     lteof(stream);
+
+
   }
+
 
   fprintf(stderr, "done --\n");
   #endif
