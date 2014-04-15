@@ -221,23 +221,9 @@ int put_code(IT &iter, uint32_t code)
     { UTF8_VAL_MASK_3, UTF8_NAME_3, UTF8_BITS_INTERMEDIATE * 3 },
   };
 
-  int count = 0;
-
-  if (code <= 0x007F) {
-    count = 1;
-  } else if (0x0080 <= code && code <= 0x07FF) {
-    count = 2;
-  } else if ((0x0800 <= code && code <= 0x0FFF) ||
-             (0x1000 <= code && code <= 0xCFFF) ||
-             (0xD000 <= code && code <= 0xD7FF) ||
-             (0xE000 <= code && code <= 0xFFFF)) {
-    count = 3;
-  } else if ((0x010000 <= code && code <= 0x03FFFF) ||
-             (0x040000 <= code && code <= 0x0FFFFF) ||
-             (0x100000 <= code && code <= 0x10FFFF)) {
-    count = 4;
-  } else {
-    return 0; // no valid range
+  int const count = octets_for_code(code);
+  if (count == 0) {
+    return 0;
   }
 
   int const intermediate_bytes = count - 1;
