@@ -170,6 +170,10 @@ utf8_valid_initial_octet:
     code = (code << UTF8_BITS_INTERMEDIATE) | (next_code & UTF8_VAL_MASK_INTERMEDIATE);
   }
 
+  if (octets_for_code(code) == 0) {
+    return invalid;
+  }
+
   return code;
 }
 
