@@ -182,7 +182,7 @@ uint32_t peek_code(IT const &iter, IT const &end, uint32_t invalid = UTF8_INVALI
 template <class IT>
 bool next_is_valid(IT const &iter, IT const &end)
 {
-  return peek_code<UTF8_INVALID_CODE, IT>(iter, end) != UTF8_INVALID_CODE;
+  return peek_code(iter, end, UTF8_INVALID_CODE) != UTF8_INVALID_CODE;
 }
 
 
