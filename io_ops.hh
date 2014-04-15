@@ -13,6 +13,7 @@
 
 namespace scolex
 {
+
 namespace io
 {
 
@@ -290,6 +291,7 @@ string_t read_nulstring(STREAM &stream, int length)
 
 
 } // namespace io
+
 } // namespace scolex
 
 
