@@ -153,94 +153,10 @@ template <class T, class STREAM>
 T read(STREAM &stream, endianness_t endianness = ENDIAN_NETWORK);
 
 
-// big/little/host/network-endian specific functions
-template <class T, class STREAM>
-int write_le(STREAM &stream, T const &t_inst)
-{
-  return write<T>(stream, t_inst, ENDIAN_LITTLE);
-}
-
-
-template <class T, class STREAM>
-int write_be(STREAM &stream, T const &t_inst)
-{
-  return write<T>(stream, t_inst, ENDIAN_BIG);
-}
-
-
-template <class T, class STREAM>
-int write_ne(STREAM &stream, T const &t_inst)
-{
-  return write<T>(stream, t_inst, ENDIAN_NETWORK);
-}
-
-
-template <class T, class STREAM>
-int write_he(STREAM &stream, T const &t_inst)
-{
-  return write<T>(stream, t_inst, ENDIAN_HOST);
-}
-
-
-template <class T, class STREAM>
-int read_le(STREAM &stream, T &t_inst)
-{
-  return read<T>(stream, t_inst, ENDIAN_LITTLE);
-}
-
-
-template <class T, class STREAM>
-int read_be(STREAM &stream, T &t_inst)
-{
-  return read<T>(stream, t_inst, ENDIAN_BIG);
-}
-
-
-template <class T, class STREAM>
-int read_ne(STREAM &stream, T &t_inst)
-{
-  return read<T>(stream, t_inst, ENDIAN_NETWORK);
-}
-
-
-template <class T, class STREAM>
-int read_he(STREAM &stream, T &t_inst)
-{
-  return read<T>(stream, t_inst, ENDIAN_HOST);
-}
-
-
-template <class T, class STREAM>
-T read_le(STREAM &stream)
-{
-  return read<T>(stream, ENDIAN_LITTLE);
-}
-
-
-template <class T, class STREAM>
-T read_be(STREAM &stream)
-{
-  return read<T>(stream, ENDIAN_BIG);
-}
-
-
-template <class T, class STREAM>
-T read_ne(STREAM &stream)
-{
-  return read<T>(stream, ENDIAN_NETWORK);
-}
-
-
-template <class T, class STREAM>
-T read_he(STREAM &stream)
-{
-  return read<T>(stream, ENDIAN_HOST);
-}
-
-
 // Read / write strings
 template <class STREAM>
 int write_nulstring(STREAM &stream, const char *str, int length = -1, int cstrlen = -1);
+
 template <class STREAM>
 int write_nulstring(STREAM &stream, string_t const &str, int length = -1);
 
