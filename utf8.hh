@@ -184,6 +184,54 @@ bool next_is_valid(IT const &iter, IT const &end)
 }
 
 
+/*==============================================================================
+  utf::put_code
+
+    Writes a given code to the iterator as a sequence of UTF-8 octets.
+    Returns 0 if the code is not representable as a well-formed UTF-8 octet
+    sequence. The output iterator is assumed to take octets of some kind.
+==============================================================================*/
+template <class IT>
+int put_code(IT &iter, uint32_t code)
+{
+  int count = 0;
+
+  if (code <= 0x007F) {
+    *(iter++) = (code & ((~UTF8_MASK_0) & 0xFF));
+    return 1;
+  } else if (0x0080 <= code && code <= 0x07FF) {
+    *(iter++) = UTF8_NAME_1 | ((code >> UTF8_BITS_INTERMEDIATE) & UTF8_VAL_MASK_1);
+    count = 2;
+  } else if ((0x0800 <= code && code <= 0x0FFF) ||
+             (0x1000 <= code && code <= 0xCFFF) ||
+             (0xD000 <= code && code <= 0xD7FF) ||
+             (0xE000 <= code && code <= 0xFFFF)) {
+    *(iter++) = (UTF8_NAME_2 | ((code >> (UTF8_BITS_INTERMEDIATE * 2)) & ((~UTF8_MASK_1) & 0xFF)));
+    count = 3;
+  } else if ((0x010000 <= code && code <= 0x03FFFF) ||
+             (0x040000 <= code && code <= 0x0FFFFF) ||
+             (0x100000 <= code && code <= 0x10FFFF)) {
+    *(iter++) = (UTF8_NAME_3 | ((code >> (UTF8_BITS_INTERMEDIATE * 3)) & ((~UTF8_MASK_1) & 0xFF)));
+    count = 4;
+  } else {
+    return 0;
+  }
+
+  switch (count) {
+  case 4:
+    *(iter++) = (UTF8_NAME_INTERMEDIATE | ((code >> (UTF8_BITS_INTERMEDIATE * 2)) & ((~UTF8_MASK_INTERMEDIATE) & 0xFF)));
+  case 3:
+    *(iter++) = (UTF8_NAME_INTERMEDIATE | ((code >> UTF8_BITS_INTERMEDIATE) & ((~UTF8_MASK_INTERMEDIATE) & 0xFF)));
+  case 2:
+    *(iter++) = UTF8_NAME_INTERMEDIATE | (code & UTF8_VAL_MASK_INTERMEDIATE);
+  default:
+    break;
+  }
+
+  return count;
+}
+
+
 } // namespace utf8
 
 } // namespace scolex
