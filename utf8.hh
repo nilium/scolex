@@ -32,9 +32,20 @@ enum : uint32_t {
   UTF8_MASK_1 = 0xE0u, UTF8_NAME_1 = 0xC0u,
   UTF8_MASK_2 = 0xF0u, UTF8_NAME_2 = 0xE0u,
   UTF8_MASK_3 = 0xF8u, UTF8_NAME_3 = 0xF0u,
-  UTF8_MASK_4 = 0xFCu, UTF8_NAME_4 = 0xF8u,
-  UTF8_MASK_5 = 0xFEu, UTF8_NAME_5 = 0xFCu,
 };
+
+
+/*==============================================================================
+  utf8::next_octet__
+
+    Gets the next octet from the iterator as a uint32_t. Does not check whether
+    the iterator is valid. Internal use only.
+==============================================================================*/
+template <class IT>
+uint32_t next_octet__(IT const &start)
+{
+  return static_cast<uint32_t>(*start) & 0xFF;
+}
 
 
 /*==============================================================================
@@ -57,7 +68,7 @@ bool read_BOM(IT &start, IT const &end)
   int index = 0;
 
   for (; index < 3 && iter != end; ++iter, ++index) {
-    uint32_t byte = static_cast<uint32_t>(*iter) & 0xFF;
+    uint32_t byte = next_octet__(iter);
     if (byte != BOM[index]) {
       return false;
     }
@@ -80,41 +91,40 @@ bool read_BOM(IT &start, IT const &end)
 template <class IT>
 uint32_t next_code(IT &iter, IT const &end, uint32_t invalid = UTF8_INVALID_CODE)
 {
+  static struct { uint32_t mask, name; } const markers[4] = {
+    {UTF8_MASK_0, UTF8_NAME_0},
+    {UTF8_MASK_1, UTF8_NAME_1},
+    {UTF8_MASK_2, UTF8_NAME_2},
+    {UTF8_MASK_3, UTF8_NAME_3}
+  };
+
   if (iter == end) {
     return invalid;
   }
 
-  uint32_t code = static_cast<uint32_t>(*iter) & 0xFF;
+  uint32_t code = next_octet__(iter);
   int count = 0;
 
-  if ((code & UTF8_MASK_0) == UTF8_NAME_0) {
-    code &= ~UTF8_MASK_0;
-    count = 0;
-  } else if ((code & UTF8_MASK_1) == UTF8_NAME_1) {
-    code &= ~UTF8_MASK_1;
-    count = 1;
-  } else if ((code & UTF8_MASK_2) == UTF8_NAME_2) {
-    code &= ~UTF8_MASK_2;
-    count = 2;
-  } else if ((code & UTF8_MASK_3) == UTF8_NAME_3) {
-    code &= ~UTF8_MASK_3;
-    count = 3;
-  } else if ((code & UTF8_MASK_4) == UTF8_NAME_4) {
-    code &= ~UTF8_MASK_4;
-    count = 4;
-  } else if ((code & UTF8_MASK_5) == UTF8_NAME_5) {
-    code &= ~UTF8_MASK_5;
-    count = 5;
-  } else {
-    for (; iter != end; ++iter) {
-      code = static_cast<uint32_t>(*iter) & 0xFF;
-      if ((code & UTF8_MASK_INTERMEDIATE) != UTF8_NAME_INTERMEDIATE) {
-        break;
-      }
+  for (; count < 4; ++count) {
+    auto const mark = markers[count];
+    if ((code & mark.mask) == mark.name) {
+      code &= ~mark.mask;
+      goto utf8_valid_initial_octet;
     }
-    return invalid;
   }
 
+  // Invalid initial octet, skip all intermediate octets until a valid one is
+  // found then return the requested code for invalids.
+  for (; iter != end; ++iter) {
+    code = next_octet__(iter);
+    if ((code & UTF8_MASK_INTERMEDIATE) != UTF8_NAME_INTERMEDIATE) {
+      break;
+    }
+  }
+
+  return invalid;
+
+utf8_valid_initial_octet:
   ++iter;
 
   for (; count; ++iter, --count) {
@@ -122,7 +132,7 @@ uint32_t next_code(IT &iter, IT const &end, uint32_t invalid = UTF8_INVALID_CODE
       return invalid;
     }
 
-    uint32_t const next_code = static_cast<uint32_t>(*iter) & 0xFF;
+    uint32_t const next_code = next_octet__(iter);
 
     if ((next_code & UTF8_MASK_INTERMEDIATE) != UTF8_NAME_INTERMEDIATE) {
       return invalid;
@@ -149,6 +159,11 @@ uint32_t peek_code(IT const &iter, IT const &end, uint32_t invalid = UTF8_INVALI
 }
 
 
+/*==============================================================================
+  utf8::next_is_valid
+
+    Returns true if the result of peek_code is valid, otherwise false.
+==============================================================================*/
 template <class IT>
 bool next_is_valid(IT const &iter, IT const &end)
 {
