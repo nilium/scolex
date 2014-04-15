@@ -139,97 +139,97 @@ public:
 */
 
 template <class T, class STREAM>
-int write(STREAM &stream, T const &t_inst, stream_endianness_t endianness = STREAM_ENDIAN_NETWORK);
+int write(STREAM &stream, T const &t_inst, endianness_t endianness = ENDIAN_NETWORK);
 
 template <class T, class STREAM>
-int read(STREAM &stream, T &t_inst, stream_endianness_t endianness = STREAM_ENDIAN_NETWORK);
+int read(STREAM &stream, T &t_inst, endianness_t endianness = ENDIAN_NETWORK);
 
 template <class T, class STREAM>
-T read(STREAM &stream, stream_endianness_t endianness = STREAM_ENDIAN_NETWORK);
+T read(STREAM &stream, endianness_t endianness = ENDIAN_NETWORK);
 
 
 // big/little/host/network-endian specific functions
 template <class T, class STREAM>
 int write_le(STREAM &stream, T const &t_inst)
 {
-  return write<T>(stream, t_inst, STREAM_ENDIAN_LITTLE);
+  return write<T>(stream, t_inst, ENDIAN_LITTLE);
 }
 
 
 template <class T, class STREAM>
 int write_be(STREAM &stream, T const &t_inst)
 {
-  return write<T>(stream, t_inst, STREAM_ENDIAN_BIG);
+  return write<T>(stream, t_inst, ENDIAN_BIG);
 }
 
 
 template <class T, class STREAM>
 int write_ne(STREAM &stream, T const &t_inst)
 {
-  return write<T>(stream, t_inst, STREAM_ENDIAN_NETWORK);
+  return write<T>(stream, t_inst, ENDIAN_NETWORK);
 }
 
 
 template <class T, class STREAM>
 int write_he(STREAM &stream, T const &t_inst)
 {
-  return write<T>(stream, t_inst, STREAM_ENDIAN_HOST);
+  return write<T>(stream, t_inst, ENDIAN_HOST);
 }
 
 
 template <class T, class STREAM>
 int read_le(STREAM &stream, T &t_inst)
 {
-  return read<T>(stream, t_inst, STREAM_ENDIAN_LITTLE);
+  return read<T>(stream, t_inst, ENDIAN_LITTLE);
 }
 
 
 template <class T, class STREAM>
 int read_be(STREAM &stream, T &t_inst)
 {
-  return read<T>(stream, t_inst, STREAM_ENDIAN_BIG);
+  return read<T>(stream, t_inst, ENDIAN_BIG);
 }
 
 
 template <class T, class STREAM>
 int read_ne(STREAM &stream, T &t_inst)
 {
-  return read<T>(stream, t_inst, STREAM_ENDIAN_NETWORK);
+  return read<T>(stream, t_inst, ENDIAN_NETWORK);
 }
 
 
 template <class T, class STREAM>
 int read_he(STREAM &stream, T &t_inst)
 {
-  return read<T>(stream, t_inst, STREAM_ENDIAN_HOST);
+  return read<T>(stream, t_inst, ENDIAN_HOST);
 }
 
 
 template <class T, class STREAM>
 T read_le(STREAM &stream)
 {
-  return read<T>(stream, STREAM_ENDIAN_LITTLE);
+  return read<T>(stream, ENDIAN_LITTLE);
 }
 
 
 template <class T, class STREAM>
 T read_be(STREAM &stream)
 {
-  return read<T>(stream, STREAM_ENDIAN_BIG);
+  return read<T>(stream, ENDIAN_BIG);
 }
 
 
 template <class T, class STREAM>
 T read_ne(STREAM &stream)
 {
-  return read<T>(stream, STREAM_ENDIAN_NETWORK);
+  return read<T>(stream, ENDIAN_NETWORK);
 }
 
 
 template <class T, class STREAM>
 T read_he(STREAM &stream)
 {
-  return read<T>(stream, STREAM_ENDIAN_HOST);
+  return read<T>(stream, ENDIAN_HOST);
 }
 
 
@@ -244,12 +244,12 @@ string_t read_nulstring(STREAM &stream, int length = -1);
 
 
 template <class T, class STREAM>
-int write(STREAM &stream, T const &t_inst, stream_endianness_t endianness)
+int write(STREAM &stream, T const &t_inst, endianness_t endianness)
 {
   static_assert(std::is_trivial<T>::value,
     "write default implementation only accepts trivially copyable types.");
 
-  if (sizeof(T) <= 1 || STREAM_ENDIAN_HOST == endianness) {
+  if (sizeof(T) <= 1 || ENDIAN_HOST == endianness) {
     return io::write(stream, int(sizeof(T)), &t_inst);
   } else {
     uint8_t const *ptr = (uint8_t *)&t_inst;
@@ -264,12 +264,12 @@ int write(STREAM &stream, T const &t_inst, stream_endianness_t endianness)
 
 
 template <class T, class STREAM>
-int read(STREAM &stream, T &t_inst, stream_endianness_t endianness)
+int read(STREAM &stream, T &t_inst, endianness_t endianness)
 {
   static_assert(std::is_trivial<T>::value,
     "read default implementation only accepts trivially copyable types.");
 
-  if (sizeof(T) <= 1 || STREAM_ENDIAN_HOST == endianness) {
+  if (sizeof(T) <= 1 || ENDIAN_HOST == endianness) {
     return ::scolex::io::read(stream, int(sizeof(T)), &t_inst);
   } else {
     uint8_t *ptr = (uint8_t *)&t_inst;
@@ -284,7 +284,7 @@ int read(STREAM &stream, T &t_inst, stream_endianness_t endianness)
 
 
 template <class T, class STREAM>
-T read(STREAM &stream, stream_endianness_t endianness)
+T read(STREAM &stream, endianness_t endianness)
 {
   static_assert(std::is_trivial<T>::value,
     "read default implementation only accepts trivially copyable types.");
