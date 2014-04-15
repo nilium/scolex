@@ -25,13 +25,26 @@ namespace utf8
 
 
 enum : uint32_t {
-  UTF8_BITS_INTERMEDIATE = 6u,
-  UTF8_MASK_INTERMEDIATE = 0xC0u, UTF8_NAME_INTERMEDIATE = 0x80u,
+  UTF8_BITS_INTERMEDIATE      = 6u,
+  UTF8_MASK_INTERMEDIATE      = 0xC0u,
+  UTF8_NAME_INTERMEDIATE      = (UTF8_MASK_INTERMEDIATE << 1) & 0xFF,
+  UTF8_VAL_MASK_INTERMEDIATE  = (~UTF8_MASK_INTERMEDIATE) & 0xFF,
 
-  UTF8_MASK_0 = 0x80u, UTF8_NAME_0 = 0u,
-  UTF8_MASK_1 = 0xE0u, UTF8_NAME_1 = 0xC0u,
-  UTF8_MASK_2 = 0xF0u, UTF8_NAME_2 = 0xE0u,
-  UTF8_MASK_3 = 0xF8u, UTF8_NAME_3 = 0xF0u,
+  UTF8_MASK_0     = 0x80u,
+  UTF8_NAME_0     = (UTF8_MASK_0 << 1) & 0xFF,
+  UTF8_VAL_MASK_0 = (~UTF8_MASK_0) & 0xFFu,
+
+  UTF8_MASK_1     = 0xE0u,
+  UTF8_NAME_1     = (UTF8_MASK_1 << 1) & 0xFF,
+  UTF8_VAL_MASK_1 = (~UTF8_MASK_1) & 0xFFu,
+
+  UTF8_MASK_2     = 0xF0u,
+  UTF8_NAME_2     = (UTF8_MASK_2 << 1) & 0xFF,
+  UTF8_VAL_MASK_2 = (~UTF8_MASK_2) & 0xFFu,
+
+  UTF8_MASK_3     = 0xF8u,
+  UTF8_NAME_3     = (UTF8_MASK_3 << 1) & 0xFF,
+  UTF8_VAL_MASK_3 = (~UTF8_MASK_3) & 0xFFu,
 };
 
 
@@ -91,11 +104,8 @@ bool read_BOM(IT &start, IT const &end)
 template <class IT>
 uint32_t next_code(IT &iter, IT const &end, uint32_t invalid = UTF8_INVALID_CODE)
 {
-  static struct { uint32_t mask, name; } const markers[4] = {
-    {UTF8_MASK_0, UTF8_NAME_0},
-    {UTF8_MASK_1, UTF8_NAME_1},
-    {UTF8_MASK_2, UTF8_NAME_2},
-    {UTF8_MASK_3, UTF8_NAME_3}
+  static uint32_t const markers[4] = {
+    UTF8_MASK_0, UTF8_MASK_1, UTF8_MASK_2, UTF8_MASK_3,
   };
 
   if (iter == end) {
@@ -106,9 +116,12 @@ uint32_t next_code(IT &iter, IT const &end, uint32_t invalid = UTF8_INVALID_CODE
   int count = 0;
 
   for (; count < 4; ++count) {
-    auto const mark = markers[count];
-    if ((code & mark.mask) == mark.name) {
-      code &= ~mark.mask;
+    uint32_t const mask = markers[count];
+    uint32_t const name = (mask << 1) & 0xFF;
+    uint32_t const vmask = (~mask) & 0xFF;
+
+    if ((code & mask) == name) {
+      code &= vmask;
       goto utf8_valid_initial_octet;
     }
   }
@@ -138,7 +151,7 @@ utf8_valid_initial_octet:
       return invalid;
     }
 
-    code = (code << UTF8_BITS_INTERMEDIATE) | (next_code & ~UTF8_MASK_INTERMEDIATE);
+    code = (code << UTF8_BITS_INTERMEDIATE) | (next_code & UTF8_VAL_MASK_INTERMEDIATE);
   }
 
   return code;
