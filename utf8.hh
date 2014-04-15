@@ -56,6 +56,15 @@ enum : uint32_t {
 
 
 /*==============================================================================
+  utf8::octets_for_code
+
+    Returns the number of octets required for the given code, or zero if the
+    code can't be represented as a well-formed UTF-8 byte sequence.
+==============================================================================*/
+int octets_for_code(uint32_t code);
+
+
+/*==============================================================================
   utf8::next_octet__
 
     Gets the next octet from the iterator as a uint32_t. Does not check whether
