@@ -3,8 +3,8 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef __FSTREAM_HH__
-#define __FSTREAM_HH__
+#ifndef __SCOLEX_FSTREAM_HH__
+#define __SCOLEX_FSTREAM_HH__
 
 #include "scolex_config.hh"
 #include "basestream.hh"
@@ -58,4 +58,4 @@ private:
 
 } // namespace scolex
 
-#endif /* end __FSTREAM_HH__ include guard */
+#endif /* end __SCOLEX_FSTREAM_HH__ include guard */

@@ -1,5 +1,5 @@
-#ifndef __STREAM_ENUMS_HH__
-#define __STREAM_ENUMS_HH__
+#ifndef __SCOLEX_STREAM_ENUMS_HH__
+#define __SCOLEX_STREAM_ENUMS_HH__
 
 
 #ifndef Q_NETWORK_IS_BIG_ENDIAN
@@ -53,4 +53,4 @@ enum stream_endianness_t
 
 } // namespace scolex
 
-#endif /* end __STREAM_ENUMS_HH__ include guard */
+#endif /* end __SCOLEX_STREAM_ENUMS_HH__ include guard */
