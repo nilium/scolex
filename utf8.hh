@@ -56,6 +56,44 @@ enum : uint32_t {
 
 
 /*==============================================================================
+  utf8::value_mask__
+
+    Returns the value mask for a UTF-8 bitmask.
+==============================================================================*/
+constexpr uint32_t value_mask__(uint32_t mask)
+{
+  return (~mask) & 0xFFu;
+}
+
+
+/*==============================================================================
+  utf8::mask_name__
+
+    Returns the name for a UTF-8 bitmask.
+==============================================================================*/
+constexpr uint32_t mask_name__(uint32_t mask)
+{
+  return (mask << 1) & 0xFFu;
+}
+
+
+/*==============================================================================
+  utf8::intermediate_byte__
+
+    Returns the intermediate byte for the given code and fourth of the
+    first 24 bits of the code.
+==============================================================================*/
+constexpr uint32_t intermediate_byte__(uint32_t code, int fourth)
+{
+  return {
+    ((code >> (fourth * UTF8_BITS_INTERMEDIATE)) &
+      UTF8_VAL_MASK_INTERMEDIATE) |
+    UTF8_NAME_INTERMEDIATE
+  };
+}
+
+
+/*==============================================================================
   utf8::octets_for_code
 
     Returns the number of octets required for the given code, or zero if the
@@ -214,28 +252,26 @@ bool next_is_valid(IT const &iter, IT const &end)
 template <class IT>
 int put_code(IT &iter, uint32_t code)
 {
-  struct { uint8_t const val_mask, name; uint16_t const shifts; } const ops[] = {
-    { UTF8_VAL_MASK_0, UTF8_NAME_0, UTF8_BITS_INTERMEDIATE * 0 },
-    { UTF8_VAL_MASK_1, UTF8_NAME_1, UTF8_BITS_INTERMEDIATE * 1 },
-    { UTF8_VAL_MASK_2, UTF8_NAME_2, UTF8_BITS_INTERMEDIATE * 2 },
-    { UTF8_VAL_MASK_3, UTF8_NAME_3, UTF8_BITS_INTERMEDIATE * 3 },
+  static constexpr uint32_t masks[4] {
+    UTF8_MASK_0, UTF8_MASK_1, UTF8_MASK_2, UTF8_MASK_3
   };
 
-  int const count = octets_for_code(code);
-  if (count == 0) {
+  int const num_octets = octets_for_code(code);
+  if (num_octets == 0) {
     return 0;
   }
 
-  int const intermediate_bytes = count - 1;
-  auto const op = ops[intermediate_bytes];
-  *(iter++) = op.name | ((code >> op.shifts) & op.val_mask);
+  int const intermediate_bytes = num_octets - 1;
+  uint32_t const mask = masks[intermediate_bytes];
 
-  for (int rep = 1; rep < count; ++rep, ++iter) {
-    int const shift = (intermediate_bytes - rep) * UTF8_BITS_INTERMEDIATE;
-    *iter = UTF8_NAME_INTERMEDIATE | ((code >> shift) & UTF8_VAL_MASK_INTERMEDIATE);
+  *(iter++) = mask_name__(mask) |
+    (value_mask__(mask) & (code >> (UTF8_BITS_INTERMEDIATE * intermediate_bytes)));
+
+  for (int rep = 1; rep < num_octets; ++rep, ++iter) {
+    *iter = intermediate_byte__(code, intermediate_bytes - rep);
   }
 
-  return count;
+  return num_octets;
 }
 
 
