@@ -57,53 +57,65 @@ bool advance_while(IT &start, IT end, Pred &&pred)
 }
 
 
-template <typename Int = int, typename IT, typename CT>
-bool accept_run(IT &start, IT const end, CT const vals_start, CT const vals_end, optional<Int> const count = none)
+template <typename IT, typename CT>
+bool accept_run(IT &start, IT const end, CT const vals_start, CT const vals_end)
 {
   using Val = typename std::decay<decltype(*start)>::type;
-  static_assert(std::is_integral<Int>::value, "Int must be an integral type");
 
-  if (count) {
-    Int max = *count;
-    Int nth = 0;
-    if (!advance_while(start, end, [&](Val const &val) {
-        return (nth++ < max) && contains__(vals_start, vals_end, val);
-      })) {
-      return false;
-    }
-  } else {
-    if (!advance_while(start, end, [&](Val const &val) { return contains__(vals_start, vals_end, val); })) {
-      return false;
-    }
+  if (!advance_while(start, end, [&](Val const &val) { return contains__(vals_start, vals_end, val); })) {
+    return false;
   }
 
   return true;
 }
 
 
-template <typename Int = int, typename IT, typename Vals>
-bool accept_run(IT &start, IT const end, Vals const &vals, optional<Int> const count = none)
+template <typename IT, typename CT>
+bool accept_run(IT &start, IT const end, CT const vals_start, CT const vals_end, long const count)
+{
+  using Val = typename std::decay<decltype(*start)>::type;
+
+  long nth { 0 };
+  if (!advance_while(start, end, [&](Val const &val) {
+      return (nth++ < count) && contains__(vals_start, vals_end, val);
+    })) {
+    return false;
+  }
+
+  return true;
+}
+
+
+template <typename IT, typename Vals>
+bool accept_run(IT &start, IT const end, Vals const &vals, long count)
 {
   return accept_run(start, end, std::begin(vals), std::end(vals), count);
+}
+
+
+template <typename IT, typename Vals>
+bool accept_run(IT &start, IT const end, Vals const &vals)
+{
+  return accept_run(start, end, std::begin(vals), std::end(vals));
 }
 
 
 template <typename IT, typename CT>
 bool accept_one(IT &start, IT const end, CT const vals_start, CT const vals_end)
 {
-  return accept_run(start, end, vals_start, vals_end, some(1));
+  return accept_run(start, end, vals_start, vals_end, 1);
 }
 
 
 template <typename IT, typename Vals>
 bool accept_one(IT &start, IT const end, Vals const &vals)
 {
-  return accept_run(start, end, std::begin(vals), std::end(vals), some(1));
+  return accept_run(start, end, std::begin(vals), std::end(vals), 1);
 }
 
 
-template <typename Int = int, typename IT, typename CT, typename FN>
-auto accept_run(IT &start, IT const end, CT const vals_start, CT const vals_end, FN &&apply, optional<Int> const count = none) -> optional<decltype(apply(start, end))>
+template <typename IT, typename CT, typename FN>
+auto accept_run(IT &start, IT const end, CT const vals_start, CT const vals_end, long count, FN &&apply) -> optional<decltype(apply(start, end))>
 {
   IT const origin { start };
 
@@ -116,12 +128,39 @@ auto accept_run(IT &start, IT const end, CT const vals_start, CT const vals_end,
 
 
 
-template <typename Int = int, typename IT, typename Vals, typename FN>
-auto accept_run(IT &start, IT const end, Vals const &vals, FN &&apply, optional<Int> const count = none) -> optional<decltype(apply(start, end))>
+template <typename IT, typename Vals, typename FN>
+auto accept_run(IT &start, IT const end, Vals const &vals, long count, FN &&apply) -> optional<decltype(apply(start, end))>
 {
   IT const origin { start };
 
   if (!accept_run(start, end, std::begin(vals), std::end(vals), count)) {
+    return none;
+  }
+
+  return some(apply(origin, IT { start }));
+}
+
+
+template <typename IT, typename CT, typename FN>
+auto accept_run(IT &start, IT const end, CT const vals_start, CT const vals_end, FN &&apply) -> optional<decltype(apply(start, end))>
+{
+  IT const origin { start };
+
+  if (!accept_run(start, end, vals_start, vals_end)) {
+    return none;
+  }
+
+  return some(apply(origin, IT { start }));
+}
+
+
+
+template <typename IT, typename Vals, typename FN>
+auto accept_run(IT &start, IT const end, Vals const &vals, FN &&apply) -> optional<decltype(apply(start, end))>
+{
+  IT const origin { start };
+
+  if (!accept_run(start, end, std::begin(vals), std::end(vals))) {
     return none;
   }
 
