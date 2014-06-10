@@ -27,7 +27,14 @@ auto peek(IT const start, IT const end) -> optional<decltype(*start)>
     return none;
   }
 
-  return some(*start);
+  IT next { start };
+  ++next;
+
+  if (next == end) {
+    return none;
+  }
+
+  return some(*next);
 }
 
 
