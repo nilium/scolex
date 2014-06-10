@@ -19,9 +19,9 @@ enum : uint32_t
 
   /* Alternatives you might use in peek/next for invalid codes */
   UTF8_REPLACEMENT_CHAR        = 0xFFFDu,
-  UTF8_NONCHARACTER1           = 0xFFFE,
-  UTF8_NONCHARACTER2           = 0xFFFF,
-  UTF8_OBJECT_REPLACEMENT_CHAR = 0xFFFC,
+  UTF8_NONCHARACTER1           = 0xFFFEu,
+  UTF8_NONCHARACTER2           = 0xFFFFu,
+  UTF8_OBJECT_REPLACEMENT_CHAR = 0xFFFCu,
 };
 
 
