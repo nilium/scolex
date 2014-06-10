@@ -10,14 +10,66 @@
 #define __PARSE_HH__
 
 #include "option.hh"
+#include "function_info.hh"
 #include <algorithm>
 
 
-template <typename IT, typename Val>
-bool contains__(IT start, IT end, Val const &value)
+struct accept_util__ final
 {
-  return std::find(start, end, value) != end;
-}
+
+  template <typename IT, typename Val>
+  static bool contains__(IT start, IT end, Val const &value)
+  {
+    return std::find(start, end, value) != end;
+  }
+
+
+  template <size_t arity>
+  struct pred_forwarding_t__
+  {
+  };
+
+
+  template <typename FN>
+  using pred_forwarding__ = pred_forwarding_t__<function_info<FN>::args::arity>;
+
+};
+
+
+template <>
+struct accept_util__::pred_forwarding_t__<0>
+{
+  template <typename FN, typename IT>
+  static bool call(FN &&pred, IT const &ptr, IT const &end)
+  {
+    (void)ptr;
+    (void)end;
+    return bool{pred()};
+  }
+};
+
+
+template <>
+struct accept_util__::pred_forwarding_t__<1>
+{
+  template <typename FN, typename IT>
+  static bool call(FN &&pred, IT const &ptr, IT const &end)
+  {
+    (void)end;
+    return bool{pred(*ptr)};
+  }
+};
+
+
+template <>
+struct accept_util__::pred_forwarding_t__<2>
+{
+  template <typename FN, typename IT>
+  static bool call(FN &&pred, IT const &ptr, IT const &end)
+  {
+    return bool{pred(ptr, end)};
+  }
+};
 
 
 template <typename IT>
@@ -41,7 +93,8 @@ auto peek(IT const start, IT const end) -> optional<decltype(*start)>
 template <bool Result = true, typename IT, typename Pred>
 bool advance_if(IT &start, IT end, Pred &&pred)
 {
-  if (start == end || bool{pred(*start)} != Result) {
+  using PF = accept_util__::pred_forwarding__<Pred>;
+  if (start == end || PF::call(std::forward<Pred &&>(pred), start, end) != Result) {
     return false;
   }
 
@@ -56,8 +109,8 @@ bool advance_while(IT &start, IT end, Pred &&pred)
 {
   IT const origin { start };
 
-  while (start != end && bool{pred(*start)} == Result) {
-    ++start;
+  while (advance_if<Result>(start, end, std::forward<Pred &&>(pred))) {
+    /* nop */
   }
 
   return start != origin;
@@ -67,9 +120,7 @@ bool advance_while(IT &start, IT end, Pred &&pred)
 template <typename IT, typename CT>
 bool accept_run(IT &start, IT const end, CT const vals_start, CT const vals_end)
 {
-  using Val = typename std::decay<decltype(*start)>::type;
-
-  if (!advance_while(start, end, [&](Val const &val) { return contains__(vals_start, vals_end, val); })) {
+  if (!advance_while(start, end, [&](IT const &i, IT const &e) { return accept_util__::contains__(vals_start, vals_end, *i); })) {
     return false;
   }
 
@@ -83,8 +134,8 @@ bool accept_run(IT &start, IT const end, CT const vals_start, CT const vals_end,
   using Val = typename std::decay<decltype(*start)>::type;
 
   long nth { 0 };
-  if (!advance_while(start, end, [&](Val const &val) {
-      return (nth++ < count) && contains__(vals_start, vals_end, val);
+  if (!advance_while(start, end, [&](IT const &i, IT const &e) {
+      return (nth++ < count) && accept_util__::contains__(vals_start, vals_end, *i);
     })) {
     return false;
   }
@@ -208,8 +259,8 @@ bool accept_seq(IT &start, IT const end, CT seq, CT const end_seq)
 
   IT pointer { start };
 
-  if (!advance_while(pointer, end, [&seq, end_seq](Val const &e) {
-      return seq != end_seq && e == *(seq++);
+  if (!advance_while(pointer, end, [&seq, end_seq](IT const &i, IT const &e) {
+      return seq != end_seq && *i == *(seq++);
     })) {
     return false;
   }
