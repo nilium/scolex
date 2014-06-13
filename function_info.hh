@@ -10,6 +10,9 @@
 #define __FUNCTION_INFO_HH__
 
 
+#include <tuple>
+
+
 template <typename T, typename Q>
 struct function_ptr_type_t__
 {
