@@ -125,14 +125,12 @@ char const *exception_what(std::exception_ptr ex_ptr) noexcept
     return "Null exception";
   }
 
-  if (exception_is<T>(ex_ptr)) {
-    try {
-      std::rethrow_exception(ex_ptr);
-    } catch (T const &e) {
-      return e.what();
-    }
-  } else {
-    return "Unknown exception type";
+  try {
+    std::rethrow_exception(ex_ptr);
+  } catch (T const &e) {
+    return e.what();
+  } catch (...) {
+    return "Invalid exception type";
   }
 }
 
