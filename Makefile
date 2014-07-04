@@ -10,7 +10,7 @@ OBJECT_PATHS=$(addprefix $(OBJECT_DIR)/,$(OBJECT_FILES))
 
 MKDIR_P=mkdir -p
 
-CFLAGS+=-Wall -Wextra -Wno-c++98-compat -Wno-c++98-compat-pedantic
+CFLAGS+=-Wall -Wextra -Wno-c++98-compat -Wno-c++98-compat-pedantic -g
 CXXFLAGS+=-std=c++11 -stdlib=libc++
 
 .PHONY: all clean directories
