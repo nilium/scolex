@@ -8,6 +8,8 @@
 #include <tuple>
 #include <type_traits>
 
+#include "test_pred.hh"
+
 
 /**
  * operator == one_of(*)
@@ -15,67 +17,6 @@
  * e.g., 1 == one_of(1, 2, 3, 4, 5)    -> true
  * e.g., 0 != one_of(1, 2, 3, 4, 5)    -> true
  */
-
-
-struct test_equal
-{
-  template <typename L, typename R>
-  bool operator () (L &&lhs, R &&rhs) const
-  {
-    return lhs == rhs;
-  }
-};
-
-
-struct test_not_equal
-{
-  template <typename L, typename R>
-  bool operator () (L &&lhs, R &&rhs) const
-  {
-    return lhs != rhs;
-  }
-};
-
-
-struct logical_or_less
-{
-  template <typename L, typename R>
-  bool operator () (L &&lhs, R &&rhs) const
-  {
-    return lhs < rhs;
-  }
-};
-
-
-struct logical_or_less_equal
-{
-  template <typename L, typename R>
-  bool operator () (L &&lhs, R &&rhs) const
-  {
-    return lhs <= rhs;
-  }
-};
-
-
-struct test_greater
-{
-  template <typename L, typename R>
-  bool operator () (L &&lhs, R &&rhs) const
-  {
-    return lhs > rhs;
-  }
-};
-
-
-struct test_greater_equal
-{
-  template <typename L, typename R>
-  bool operator () (L &&lhs, R &&rhs) const
-  {
-    return lhs >= rhs;
-  }
-};
-
 
 /**
  * Wrapper around std::tuple to ensure operator == (x, one_of_args) is strongly
@@ -155,28 +96,28 @@ bool operator != (one_of_args<LhsArgs...> &&lhs, Rhs const &rhs)
 template <typename Lhs, typename... RhsArgs>
 bool operator < (Lhs const &lhs, one_of_args<RhsArgs...> &&rhs)
 {
-  return rhs.logical_or_l(lhs, logical_or_less{});
+  return rhs.logical_or_l(lhs, test_less{});
 }
 
 
 template <typename Lhs, typename... RhsArgs>
 bool operator <= (Lhs const &lhs, one_of_args<RhsArgs...> &&rhs)
 {
-  return rhs.logical_or_l(lhs, logical_or_less_equal{});
+  return rhs.logical_or_l(lhs, test_less_equal{});
 }
 
 
 template <typename Rhs, typename... LhsArgs>
 bool operator < (one_of_args<LhsArgs...> &&lhs, Rhs const &rhs)
 {
-  return lhs.logical_or_r(rhs, logical_or_less{});
+  return lhs.logical_or_r(rhs, test_less{});
 }
 
 
 template <typename Rhs, typename... LhsArgs>
 bool operator <= (one_of_args<LhsArgs...> &&lhs, Rhs const &rhs)
 {
-  return lhs.logical_or_r(rhs, logical_or_less_equal{});
+  return lhs.logical_or_r(rhs, test_less_equal{});
 }
 
 
