@@ -142,6 +142,42 @@ struct fixed_ring_buffer
   }
 
 
+  bool is_contiguous() const
+  {
+    return (_read % _Capacity) <= (_write % _Capacity);
+  }
+
+  /*!
+    Makes the contents of the ring buffer contiguous if the buffer is not
+    contiguous. If not contiguous, all rewind markers are invalidated.
+    If contiguous, this is a no-op and rewind markers remain valid.
+
+    @pre  is_contiguous -> true
+    @post rewind markers are invalidated
+  */
+  void make_contiguous()
+  {
+    if (is_contiguous()) {
+      return;
+    }
+
+    size_t const count = size();
+    value_type data[_Capacity];
+    for (size_t index = 0; index < count; ++index) {
+      data[index] = read();
+    }
+
+    _read = 0;
+    _write = 0;
+
+    for (size_t index = 0; index < count; ++index) {
+      write(data[index]);
+    }
+
+    assert(_write == count);
+  }
+
+
   friend class std::back_insert_iterator<self_type>;
 
   void push_back(insert_type value)
