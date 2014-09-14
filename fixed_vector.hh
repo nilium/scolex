@@ -51,6 +51,12 @@ struct fixed_vector
   }
 
 
+  void clear()
+  {
+    _size = 0;
+  }
+
+
   value_type shift()
   {
     value_type const out (( _data[0] ));
