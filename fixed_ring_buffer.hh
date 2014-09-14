@@ -136,6 +136,12 @@ struct fixed_ring_buffer
   }
 
 
+  void clear()
+  {
+    _write = _read = 0;
+  }
+
+
   friend class std::back_insert_iterator<self_type>;
 
   void push_back(insert_type value)
