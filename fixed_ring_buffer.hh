@@ -61,11 +61,23 @@ struct fixed_ring_buffer
 
   value_type read()
   {
-    assert(_read < _write);
+    if (can_read()) {
+      value_type const result = peek();
+      _read += 1;
+      return result;
+    } else {
+      return value_type {};
+    }
+  }
 
-    size_t const index = _read % _Capacity;
-    _read += 1;
-    return _storage[index];
+  value_type peek()
+  {
+    if (can_read()) {
+      size_t const index = _read % _Capacity;
+      return _storage[index];
+    } else {
+      return value_type {};
+    }
   }
 
 
