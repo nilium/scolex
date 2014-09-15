@@ -13,6 +13,8 @@
 template <typename T, size_t _Capacity>
 struct fixed_ring_buffer
 {
+  static constexpr size_t CAPACITY = _Capacity;
+
   using value_type = typename std::decay<T>::type;
   using insert_type =
     typename std::conditional<
