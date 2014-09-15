@@ -8,6 +8,7 @@
 #include <iterator>
 #include <type_traits>
 #include <cassert>
+#include <cstddef>
 
 
 template <typename T, size_t _Capacity>
@@ -23,6 +24,149 @@ struct fixed_ring_buffer
       value_type const &
     >::type;
   using self_type = fixed_ring_buffer<value_type, _Capacity>;
+
+
+  struct iterator
+  {
+    friend struct fixed_ring_buffer<value_type, _Capacity>;
+
+    using value_type = typename self_type::value_type;
+    using reference = value_type const &;
+    using pointer = value_type const *;
+    using difference_type = ptrdiff_t;
+    using iterator_category = std::random_access_iterator_tag;
+
+
+  private:
+
+    fixed_ring_buffer const *_buffer;
+    size_t _head;
+
+    iterator(fixed_ring_buffer const *buffer, size_t head)
+    : _buffer{buffer}
+    , _head{head}
+    {
+      // nop
+    }
+
+
+  public:
+
+    iterator(const iterator &) = default;
+    iterator &operator = (const iterator &) = default;
+
+    iterator &operator ++ ()
+    {
+      ++_head;
+      return *this;
+    }
+
+    iterator operator ++ (int)
+    {
+      iterator const dup = *this;
+      ++(*this);
+      return dup;
+    }
+
+    iterator &operator -- ()
+    {
+      assert(_head > 0);
+      --_head;
+      return *this;
+    }
+
+    iterator operator -- (int)
+    {
+      iterator const dup = *this;
+      --(*this);
+      return dup;
+    }
+
+    iterator operator + (difference_type delta) const
+    {
+      assert(
+        delta >= 0
+        || (delta < 0 && static_cast<size_t>(-delta) <= _head)
+        );
+      return { _buffer, _head + delta };
+    }
+
+    friend iterator operator + (difference_type lhs, iterator const &rhs)
+    {
+      return rhs + lhs;
+    }
+
+    iterator operator - (difference_type delta) const
+    {
+      return *this + (-delta);
+    }
+
+    iterator &operator -= (difference_type rhs)
+    {
+      *this = *this - rhs;
+      return *this;
+    }
+
+    iterator &operator += (difference_type rhs)
+    {
+      *this = *this + rhs;
+      return *this;
+    }
+
+    difference_type operator - (iterator const &other) const
+    {
+      assert(_buffer == other._buffer);
+      return static_cast<difference_type>(_head) - static_cast<difference_type>(other._head);
+    }
+
+    reference operator * () const
+    {
+      return (*_buffer)[_head];
+    }
+
+    pointer operator -> () const
+    {
+      return &(*_buffer)[_head];
+    }
+
+    reference operator [] (difference_type index) const
+    {
+      return (*_buffer)[static_cast<difference_type>(_head) + index];
+    }
+
+    bool operator == (iterator const &other) const
+    {
+      return _buffer == other._buffer && _head == other._head;
+    }
+
+    bool operator != (iterator const &other) const
+    {
+      return _buffer != other._buffer || _head != other._head;
+    }
+
+    bool operator <= (iterator const &other) const
+    {
+      return _buffer != other._buffer || _head <= other._head;
+    }
+
+    bool operator >= (iterator const &other) const
+    {
+      return _buffer != other._buffer || _head >= other._head;
+    }
+
+    bool operator < (iterator const &other) const
+    {
+      return _buffer != other._buffer || _head < other._head;
+    }
+
+    bool operator > (iterator const &other) const
+    {
+      return _buffer != other._buffer || _head > other._head;
+    }
+  };
+
+  using const_iterator = iterator;
+
 
   static_assert(
     std::is_pod<value_type>::value,
@@ -186,6 +330,38 @@ public:
     }
 
     assert(_write == count);
+  }
+
+
+  iterator cbegin() const
+  {
+    return iterator { this, _read };
+  }
+
+  iterator cend() const
+  {
+    return iterator { this, _write };
+  }
+
+  iterator begin() const
+  {
+    return cbegin();
+  }
+
+  iterator end() const
+  {
+    return cend();
+  }
+
+
+private:
+
+  friend struct self_type::iterator;
+
+  template <typename Integer, typename std::enable_if<std::is_integral<Integer>::value, bool>::type = true>
+  value_type const &operator [] (Integer index) const
+  {
+    return _storage[index % static_cast<Integer>(_Capacity)];
   }
 
 
