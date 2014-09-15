@@ -141,6 +141,11 @@ public:
     return _write - _read;
   }
 
+  constexpr size_t capacity() const
+  {
+    return _Capacity;
+  }
+
 
   void clear()
   {
