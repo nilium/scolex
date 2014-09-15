@@ -11,6 +11,10 @@
 #include <cstddef>
 
 
+/*!
+ * A basic POD-only ring buffer containing a fixed (at compile-time) number of
+ * elements of type T.
+ */
 template <typename T, size_t _Capacity>
 struct fixed_ring_buffer
 {
@@ -190,6 +194,7 @@ public:
 
   fixed_ring_buffer() = default;
 
+  /*! Attempts to write a value to the buffer. Returns whether it succeeded. */
   bool write(insert_type value)
   {
     size_t const delta = size();
@@ -209,6 +214,7 @@ public:
     return true;
   }
 
+  /*! Returns the next value in the buffer and advances the read head. */
   value_type read()
   {
     if (can_read()) {
@@ -220,6 +226,7 @@ public:
     }
   }
 
+  /*! Returns the next value in the buffer without advancing the read head. */
   value_type peek()
   {
     if (can_read()) {
@@ -231,11 +238,21 @@ public:
   }
 
 
+  /*!
+   * Returns whether the read head can be rewound once (i.e., whether a call
+   * to rewind() will succeed).
+   */
   bool can_rewind() const
   {
     return can_write() && _read > 0;
   }
 
+  /*!
+   * Rewinds the last read() operation. This is guaranteed to work if and only
+   * if the last read() call was not followed by write() or make_contiguous().
+   * If write() was called, it will only work if the buffer did not overwrite
+   * the last-read value. This fails if no read() has occurred previously.
+   */
   bool rewind()
   {
     if (can_rewind()) {
@@ -247,16 +264,29 @@ public:
   }
 
 
+  /*!
+   * Returns a rewind marker for the current read head (i.e., just returns the
+   * read head). This can be passed to either can_rewind_to(marker) or
+   * rewind_to(marker) to rewind to a specific point in the buffer. Rewind
+   * markers are only guaranteed to be valid until either make_contiguous() or
+   * write() is called. Any change to the write head may invalidate a rewind
+   * marker.
+   */
   size_t rewind_marker() const
   {
     return _read;
   }
 
+  /*! Returns whether the buffer can be rewound to the given rewind marker. */
   bool can_rewind_to(size_t const marker) const
   {
     return can_write() && marker <= _write && (_write - marker) <= _Capacity;
   }
 
+  /*!
+   * Attempts to rewind the ring buffer back to an earlier read marker, if the
+   * marker is in range.
+   */
   bool rewind_to(size_t marker)
   {
     if (can_rewind_to(marker)) {
@@ -268,48 +298,59 @@ public:
   }
 
 
+  /*! Returns whether the ring buffer can be read from (has elements). */
   bool can_read() const
   {
     return size() > 0;
   }
 
+  /*! Returns whether the ring buffer can be written to (isn't full). */
   bool can_write() const
   {
     return size() < _Capacity;
   }
 
 
+  /*! Returns the number of elements currently held by the ring buffer. */
   size_t size() const
   {
     assert(_read <= _write);
     return _write - _read;
   }
 
+  /*! Returns the ring buffer's capacity. */
   constexpr size_t capacity() const
   {
     return _Capacity;
   }
 
 
+  /*! Clears the buffer and resets both its read and write heads. */
   void clear()
   {
     _write = _read = 0;
   }
 
 
+  /*!
+   * Returns whether the ring buffer's contents are contiguous. The buffer is
+   * considered contiguous if each element in it is ordered one after the other
+   * in memory and does not require wrapping the read head to access.
+   */
   bool is_contiguous() const
   {
     return (_read % _Capacity) <= (_write % _Capacity);
   }
 
   /*!
-    Makes the contents of the ring buffer contiguous if the buffer is not
-    contiguous. If not contiguous, all rewind markers are invalidated.
-    If contiguous, this is a no-op and rewind markers remain valid.
-
-    @pre  is_contiguous -> true
-    @post rewind markers are invalidated
-  */
+   * Makes the contents of the ring buffer contiguous if the buffer is not
+   * contiguous. If not contiguous, all rewind markers are invalidated.
+   *
+   * If contiguous, this is a no-op and rewind markers remain valid.
+   *
+   * @post rewind markers are invalidated if is_contiguous() returned true
+   * before make_contiguous() was called.
+   */
   void make_contiguous()
   {
     if (is_contiguous()) {
