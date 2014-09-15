@@ -35,10 +35,14 @@ struct fixed_ring_buffer
     );
 
 
+private:
+
   size_t _write = 0;
   size_t _read = 0;
   value_type _storage[_Capacity];
 
+
+public:
 
   fixed_ring_buffer() = default;
 
